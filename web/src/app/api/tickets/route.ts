@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { requireUser } from "@/lib/api-utils";
 import { ticketCreateSchema } from "@/lib/validations";
 import { classifyTicket, findDuplicates, routeTicket } from "@/lib/ml-client";
+import { categoryDisplayName } from "@/lib/categories";
 import { emitTicketEvent, emitToAdmins } from "@/lib/socket-server";
 import type { Prisma, TicketPriority } from "@prisma/client";
 
@@ -68,7 +69,7 @@ export async function POST(req: Request) {
       where: { slug: classification.category },
       update: {},
       create: {
-        name: classification.category,
+        name: categoryDisplayName(classification.category),
         slug: classification.category,
       },
     });

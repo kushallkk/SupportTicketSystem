@@ -11,6 +11,7 @@ import {
   BarChart3,
   Sparkles,
   LogOut,
+  Menu,
   Command as CommandIcon,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -26,6 +27,8 @@ import {
   DropdownMenuTrigger,
   DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
+import { useState } from "react";
 
 type Role = "USER" | "AGENT" | "ADMIN";
 
@@ -54,6 +57,31 @@ export function AppShell({
   const pathname = usePathname();
   const router = useRouter();
   const items = NAV[role];
+  const [mobileNavOpen, setMobileNavOpen] = useState(false);
+
+  const navLinks = (onNavigate?: () => void) => (
+    <nav className="flex-1 space-y-1 p-3">
+      {items.map((item) => {
+        const active = pathname === item.href;
+        return (
+          <Link
+            key={item.href}
+            href={item.href}
+            onClick={onNavigate}
+            className={cn(
+              "flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
+              active
+                ? "bg-sidebar-accent text-sidebar-accent-foreground"
+                : "text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+            )}
+          >
+            {item.icon}
+            {item.label}
+          </Link>
+        );
+      })}
+    </nav>
+  );
 
   return (
     <div className="flex min-h-screen">
@@ -64,26 +92,7 @@ export function AppShell({
           </div>
           ResolveIQ
         </div>
-        <nav className="flex-1 space-y-1 p-3">
-          {items.map((item) => {
-            const active = pathname === item.href;
-            return (
-              <Link
-                key={item.href}
-                href={item.href}
-                className={cn(
-                  "flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
-                  active
-                    ? "bg-sidebar-accent text-sidebar-accent-foreground"
-                    : "text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
-                )}
-              >
-                {item.icon}
-                {item.label}
-              </Link>
-            );
-          })}
-        </nav>
+        {navLinks()}
         <div className="border-t p-3">
           <Button
             variant="ghost"
@@ -100,11 +109,29 @@ export function AppShell({
 
       <div className="flex min-w-0 flex-1 flex-col">
         <header className="flex h-14 items-center justify-between border-b px-4">
-          <div className="flex items-center gap-2 font-semibold sm:hidden">
-            <div className="flex size-6 items-center justify-center rounded-md bg-primary text-primary-foreground">
-              <Sparkles className="size-3.5" />
+          <div className="flex items-center gap-2 sm:hidden">
+            <Sheet open={mobileNavOpen} onOpenChange={setMobileNavOpen}>
+              <SheetTrigger render={<Button variant="ghost" size="icon-sm" />}>
+                <Menu className="size-4" />
+              </SheetTrigger>
+              <SheetContent side="left" className="w-64 bg-sidebar p-0 text-sidebar-foreground">
+                <SheetHeader className="border-b">
+                  <SheetTitle className="flex items-center gap-2">
+                    <div className="flex size-6 items-center justify-center rounded-md bg-primary text-primary-foreground">
+                      <Sparkles className="size-3.5" />
+                    </div>
+                    ResolveIQ
+                  </SheetTitle>
+                </SheetHeader>
+                {navLinks(() => setMobileNavOpen(false))}
+              </SheetContent>
+            </Sheet>
+            <div className="flex items-center gap-2 font-semibold">
+              <div className="flex size-6 items-center justify-center rounded-md bg-primary text-primary-foreground">
+                <Sparkles className="size-3.5" />
+              </div>
+              ResolveIQ
             </div>
-            ResolveIQ
           </div>
           <div className="hidden sm:block" />
           <div className="flex items-center gap-2">
