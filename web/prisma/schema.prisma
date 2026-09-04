@@ -1,0 +1,201 @@
+// ResolveIQ — Prisma schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  USER
+  AGENT
+  ADMIN
+}
+
+enum TicketStatus {
+  OPEN
+  IN_PROGRESS
+  RESOLVED
+  CLOSED
+  REOPENED
+}
+
+enum TicketPriority {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+model User {
+  id            String    @id @default(cuid())
+  name          String
+  email         String    @unique
+  passwordHash  String
+  role          Role      @default(USER)
+  image         String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  // Agent-specific profile (only populated when role = AGENT)
+  agentProfile  AgentProfile?
+
+  ticketsRaised   Ticket[]   @relation("TicketRaisedBy")
+  ticketsAssigned Ticket[]   @relation("TicketAssignedTo")
+  comments        Comment[]
+  ratings         Rating[]
+  assignmentOverrides AssignmentLog[] @relation("OverriddenBy")
+
+  @@index([role])
+}
+
+model AgentProfile {
+  id        String   @id @default(cuid())
+  userId    String   @unique
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // Denormalized stats used by the load-balancing scorer; updated on ticket resolution.
+  categoryStats AgentCategoryStat[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model AgentCategoryStat {
+  id                String       @id @default(cuid())
+  agentProfileId    String
+  agentProfile      AgentProfile @relation(fields: [agentProfileId], references: [id], onDelete: Cascade)
+  categoryId        String
+  category          Category     @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+
+  resolvedCount     Int      @default(0)
+  avgResolutionMins Float    @default(0)
+  accuracyScore     Float    @default(0.5) // 0..1, how often model's suggestion matched final resolution path
+
+  updatedAt         DateTime @updatedAt
+
+  @@unique([agentProfileId, categoryId])
+}
+
+model Category {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  slug        String   @unique
+  description String?
+  createdAt   DateTime @default(now())
+
+  tickets     Ticket[]
+  agentStats  AgentCategoryStat[]
+}
+
+model Ticket {
+  id          String         @id @default(cuid())
+  title       String
+  description String
+
+  status      TicketStatus   @default(OPEN)
+  priority    TicketPriority @default(MEDIUM)
+
+  categoryId  String?
+  category    Category?      @relation(fields: [categoryId], references: [id])
+
+  raisedById  String
+  raisedBy    User            @relation("TicketRaisedBy", fields: [raisedById], references: [id])
+
+  assignedToId String?
+  assignedTo   User?          @relation("TicketAssignedTo", fields: [assignedToId], references: [id])
+
+  // AI classification metadata
+  aiCategory       String?
+  aiPriority       String?
+  aiConfidence     Float?
+  aiSuggestedAgentId String?
+
+  // Duplicate detection
+  embedding        Float[]      @default([])
+  duplicateOfId    String?
+  duplicateOf      Ticket?      @relation("DuplicateLink", fields: [duplicateOfId], references: [id])
+  duplicates       Ticket[]     @relation("DuplicateLink")
+  similarityScore  Float?
+
+  resolutionNote   String?
+  resolvedAt       DateTime?
+  closedAt         DateTime?
+  firstResponseAt  DateTime?
+
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+
+  comments        Comment[]
+  attachments     Attachment[]
+  ratings         Rating[]
+  assignmentLogs  AssignmentLog[]
+
+  @@index([status])
+  @@index([priority])
+  @@index([categoryId])
+  @@index([assignedToId])
+  @@index([raisedById])
+}
+
+model Comment {
+  id        String   @id @default(cuid())
+  ticketId  String
+  ticket    Ticket   @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  authorId  String
+  author    User     @relation(fields: [authorId], references: [id])
+  body      String
+  isInternal Boolean @default(false) // internal agent/admin notes, hidden from the raising user
+  createdAt DateTime @default(now())
+
+  @@index([ticketId])
+}
+
+model Attachment {
+  id        String   @id @default(cuid())
+  ticketId  String
+  ticket    Ticket   @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  fileName  String
+  fileUrl   String
+  fileSize  Int
+  mimeType  String
+  createdAt DateTime @default(now())
+
+  @@index([ticketId])
+}
+
+model Rating {
+  id        String   @id @default(cuid())
+  ticketId  String
+  ticket    Ticket   @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  score     Int      // 1-5
+  feedback  String?
+  createdAt DateTime @default(now())
+
+  @@unique([ticketId])
+}
+
+// Audit log of AI routing decisions vs admin overrides — powers the "model was right X% of the time" metric.
+model AssignmentLog {
+  id               String   @id @default(cuid())
+  ticketId         String
+  ticket           Ticket   @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+
+  aiSuggestedAgentId String?
+  aiSuggestedScore    Float?
+  finalAgentId        String?
+
+  wasOverridden    Boolean  @default(false)
+  overriddenById   String?
+  overriddenBy     User?    @relation("OverriddenBy", fields: [overriddenById], references: [id])
+
+  reason           String?
+  createdAt        DateTime @default(now())
+
+  @@index([ticketId])
+}
