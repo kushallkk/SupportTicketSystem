@@ -1,5 +1,6 @@
 import { Sparkles, GitMerge } from "lucide-react";
 import Link from "next/link";
+import { motion } from "framer-motion";
 import { Progress } from "@/components/ui/progress";
 import { Button } from "@/components/ui/button";
 import type { TicketDetail } from "@/hooks/use-ticket";
@@ -8,7 +9,12 @@ export function AiPanel({ ticket }: { ticket: TicketDetail }) {
   if (!ticket.aiCategory && !ticket.aiConfidence) return null;
 
   return (
-    <div className="space-y-2 rounded-xl border bg-accent/40 p-4">
+    <motion.div
+      initial={{ opacity: 0, y: 6 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.25 }}
+      className="space-y-2 rounded-xl border bg-accent/40 p-4"
+    >
       <div className="flex items-center gap-2 text-sm font-medium text-accent-foreground">
         <Sparkles className="size-4" />
         AI classification
@@ -32,7 +38,7 @@ export function AiPanel({ ticket }: { ticket: TicketDetail }) {
           </div>
         )}
       </div>
-    </div>
+    </motion.div>
   );
 }
 
@@ -50,7 +56,12 @@ export function DuplicateBanner({
   if (!ticket.duplicateOf) return null;
 
   return (
-    <div className="space-y-3 rounded-xl border border-purple-500/30 bg-purple-500/5 p-4">
+    <motion.div
+      initial={{ opacity: 0, scale: 0.97 }}
+      animate={{ opacity: 1, scale: 1 }}
+      transition={{ duration: 0.3, ease: "easeOut" }}
+      className="space-y-3 rounded-xl border border-purple-500/30 bg-purple-500/5 p-4"
+    >
       <div className="flex items-center gap-2 text-sm font-medium text-purple-600 dark:text-purple-400">
         <GitMerge className="size-4" />
         Looks similar to an existing ticket
@@ -74,6 +85,6 @@ export function DuplicateBanner({
           Mark my ticket resolved using this fix
         </Button>
       )}
-    </div>
+    </motion.div>
   );
 }

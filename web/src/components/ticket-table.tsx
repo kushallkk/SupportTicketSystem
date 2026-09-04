@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { motion } from "framer-motion";
 import { StatusBadge, PriorityBadge } from "@/components/ticket-badges";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -45,9 +46,14 @@ export function TicketTable({
   return (
     <div className="overflow-hidden rounded-xl border">
       <div className="divide-y">
-        {tickets.map((t) => (
-          <Link
+        {tickets.map((t, i) => (
+          <motion.div
             key={t.id}
+            initial={{ opacity: 0, y: 4 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.2, delay: Math.min(i, 8) * 0.02 }}
+          >
+          <Link
             href={`${basePath}/${t.id}`}
             className="flex items-center gap-3 px-4 py-3 transition-colors hover:bg-muted/50"
           >
@@ -93,6 +99,7 @@ export function TicketTable({
               </Avatar>
             )}
           </Link>
+          </motion.div>
         ))}
       </div>
     </div>
