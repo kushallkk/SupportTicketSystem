@@ -59,3 +59,18 @@ export async function setStubDuplicates(matches: { ticketId: string; similarity:
   });
   if (!res.ok) throw new Error("ML stub rejected config");
 }
+
+/**
+ * Opens a ticket from a list page. At desktop widths a click only selects the row and shows it in the side
+ * panel, so continue to the full page from there; on narrow screens the click navigates directly.
+ */
+export async function openTicket(page: Page, name: RegExp | string) {
+  const row = page.getByRole("link", { name }).first();
+  await row.click();
+  // The selected row is marked aria-current; only then is the panel guaranteed to show *this* ticket.
+  const selected = await expect(row).toHaveAttribute("aria-current", "true", { timeout: 5_000 }).then(
+    () => true,
+    () => false
+  );
+  if (selected) await page.locator("a", { hasText: "Open full ticket" }).click();
+}

@@ -42,7 +42,8 @@ export default function AnalyticsPage() {
 
   if (!data) {
     return (
-      <div className="mx-auto max-w-5xl space-y-4">
+      <div className="scrollbar-thin h-full overflow-y-auto">
+      <div className="mx-auto max-w-5xl space-y-4 px-4 pt-1 pb-10 sm:px-6">
         <Skeleton className="h-8 w-48" />
         <div className="grid gap-4 sm:grid-cols-4">
           {Array.from({ length: 4 }).map((_, i) => (
@@ -51,13 +52,15 @@ export default function AnalyticsPage() {
         </div>
         <Skeleton className="h-72 w-full rounded-xl" />
       </div>
+      </div>
     );
   }
 
   const maxOpen = Math.max(1, ...data.agentWorkload.map((a) => a.openCount));
 
   return (
-    <div className="mx-auto max-w-5xl space-y-6">
+    <div className="scrollbar-thin h-full overflow-y-auto">
+      <div className="mx-auto max-w-5xl space-y-6 px-4 pt-1 pb-10 sm:px-6">
       <div>
         <h1 className="text-2xl font-semibold tracking-tight">Analytics</h1>
         <p className="text-sm text-muted-foreground">How the desk is performing, and how the AI is doing.</p>
@@ -162,15 +165,16 @@ export default function AnalyticsPage() {
           </CardContent>
         </Card>
       </div>
+      </div>
     </div>
   );
 }
 
 function StatCard({ label, value, hint }: { label: string; value: string; hint?: string }) {
   return (
-    <Card>
+    <Card className="transition-shadow hover:shadow-[var(--shadow-lift)]">
       <CardContent className="pt-6">
-        <p className="text-2xl font-semibold tracking-tight">{value}</p>
+        <p className="text-gradient w-fit text-3xl font-semibold tracking-tight">{value}</p>
         <p className="text-xs text-muted-foreground">{label}</p>
         {hint && <p className="mt-1 text-[10px] text-muted-foreground/70">{hint}</p>}
       </CardContent>

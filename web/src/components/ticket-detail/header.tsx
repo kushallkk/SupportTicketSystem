@@ -7,7 +7,7 @@ import type { TicketDetail } from "@/hooks/use-ticket";
 export function TicketHeader({ ticket, basePath }: { ticket: TicketDetail; basePath: string }) {
   return (
     <div className="space-y-4">
-      <Link href={basePath} className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground">
+      <Link href={basePath} className="inline-flex items-center gap-1 rounded-md text-sm text-muted-foreground transition-colors hover:text-foreground">
         <ArrowLeft className="size-3.5" />
         Back
       </Link>
@@ -17,12 +17,12 @@ export function TicketHeader({ ticket, basePath }: { ticket: TicketDetail; baseP
           <StatusBadge status={ticket.status as never} />
           <PriorityBadge priority={ticket.priority as never} />
           {ticket.category && (
-            <span className="rounded-full border px-2 py-0.5 text-xs text-muted-foreground">
+            <span className="rounded-full bg-muted px-2 py-0.5 text-xs text-muted-foreground">
               {ticket.category.name}
             </span>
           )}
         </div>
-        <h1 className="text-xl font-semibold tracking-tight sm:text-2xl">{ticket.title}</h1>
+        <h1 className="text-2xl font-semibold tracking-tight text-balance">{ticket.title}</h1>
         <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
           <span>Raised by {ticket.raisedBy.name}</span>
           <span>·</span>
@@ -32,7 +32,7 @@ export function TicketHeader({ ticket, basePath }: { ticket: TicketDetail; baseP
         </div>
       </div>
 
-      <p className="whitespace-pre-wrap rounded-xl border bg-card p-4 text-sm">{ticket.description}</p>
+      <p className="whitespace-pre-wrap rounded-2xl bg-card p-5 text-sm leading-relaxed shadow-[var(--shadow-soft)] ring-1 ring-foreground/5">{ticket.description}</p>
     </div>
   );
 }

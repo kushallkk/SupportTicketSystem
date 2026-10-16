@@ -70,7 +70,7 @@ export function CommentThread({
 
   return (
     <div className="space-y-4">
-      <h3 className="text-sm font-medium">Activity</h3>
+      <h3 className="text-sm font-semibold tracking-tight">Activity</h3>
 
       <div className="space-y-4">
         {ticket.comments.length === 0 && (
@@ -83,8 +83,8 @@ export function CommentThread({
             </Avatar>
             <div
               className={cn(
-                "min-w-0 flex-1 rounded-xl border px-3 py-2",
-                c.isInternal ? "border-amber-500/30 bg-amber-500/5" : "bg-card"
+                "min-w-0 flex-1 rounded-2xl px-4 py-2.5",
+                c.isInternal ? "bg-amber-500/10 ring-1 ring-amber-500/20" : "bg-muted/50"
               )}
             >
               <div className="flex items-center gap-2 text-xs">
@@ -108,12 +108,13 @@ export function CommentThread({
         ))}
       </div>
 
-      <form onSubmit={submit} className="space-y-2 rounded-xl border p-3">
+      <form onSubmit={submit} className="space-y-2 rounded-2xl bg-card p-3 shadow-[var(--shadow-soft)] ring-1 ring-foreground/5">
         <Textarea
           value={body}
           onChange={(e) => setBody(e.target.value)}
           placeholder={canPostInternal ? "Add a comment or internal note..." : "Add a comment..."}
           rows={3}
+          className="resize-none border-0 bg-transparent px-1 shadow-none focus-visible:ring-0 dark:bg-transparent"
         />
         <FilePicker variant="compact" files={files} onChange={setFiles} disabled={loading} />
         <div className="flex items-center justify-between">

@@ -27,7 +27,8 @@ export default function AgentsPage() {
   }, []);
 
   return (
-    <div className="mx-auto max-w-4xl space-y-6">
+    <div className="scrollbar-thin h-full overflow-y-auto">
+      <div className="mx-auto max-w-4xl space-y-6 px-4 pt-1 pb-10 sm:px-6">
       <div>
         <h1 className="text-2xl font-semibold tracking-tight">Agents</h1>
         <p className="text-sm text-muted-foreground">Workload and category track record used by the routing model.</p>
@@ -80,6 +81,7 @@ export default function AgentsPage() {
             )}
           </Card>
         ))}
+      </div>
       </div>
     </div>
   );

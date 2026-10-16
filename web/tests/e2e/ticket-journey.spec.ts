@@ -1,6 +1,6 @@
 import { expect, test } from "@playwright/test";
 import { AGENT_A, AGENT_B, PASSWORD, db, resetAndSeed } from "./db";
-import { closeSessions, logIn, newSession, raiseTicket, setStubDuplicates, signUp } from "./helpers";
+import { closeSessions, logIn, newSession, openTicket, raiseTicket, setStubDuplicates, signUp } from "./helpers";
 
 test.afterEach(closeSessions);
 
@@ -33,7 +33,7 @@ test("raise -> AI routes it -> agent resolves -> customer rates and it closes", 
   const agent = await newSession(browser);
   await logIn(agent, assignee.email, PASSWORD);
   await expect(agent).toHaveURL(/\/agent$/);
-  await agent.getByRole("link", { name: /Cannot reset my password/ }).click();
+  await openTicket(agent, /Cannot reset my password/);
   await agent.getByRole("button", { name: "Start working on this" }).click();
   await agent.getByLabel("Resolution note").fill("Unlocked the account and re-sent the reset email.");
   await agent.getByRole("button", { name: "Mark resolved" }).click();

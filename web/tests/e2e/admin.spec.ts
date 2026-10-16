@@ -1,6 +1,6 @@
 import { expect, test } from "@playwright/test";
 import { ADMIN, AGENT_A, AGENT_B, PASSWORD, db, resetAndSeed } from "./db";
-import { closeSessions, logIn, newSession, setStubDuplicates } from "./helpers";
+import { closeSessions, logIn, newSession, openTicket, setStubDuplicates } from "./helpers";
 
 test.afterEach(closeSessions);
 
@@ -29,7 +29,7 @@ test("admin sees all tickets and can override the AI's assignment; it is logged"
   const admin = await newSession(browser);
   await logIn(admin, ADMIN.email, PASSWORD);
   await expect(admin.getByRole("link", { name: /Invoice is wrong/ })).toBeVisible();
-  await admin.getByRole("link", { name: /Invoice is wrong/ }).click();
+  await openTicket(admin, /Invoice is wrong/);
   await expect(admin.getByText("Assigned to Agent Alpha")).toBeVisible();
 
   // The dropdown must show the agent's name, not their database id.
@@ -53,7 +53,7 @@ test("the reassigned agent now has the ticket and the previous agent does not", 
   await seedAssignedTicket();
   const admin = await newSession(browser);
   await logIn(admin, ADMIN.email, PASSWORD);
-  await admin.getByRole("link", { name: /Invoice is wrong/ }).click();
+  await openTicket(admin, /Invoice is wrong/);
   await admin.getByRole("combobox").first().click();
   await admin.getByRole("option", { name: /Agent Beta/ }).click();
   await admin.getByRole("button", { name: "Save changes" }).click();

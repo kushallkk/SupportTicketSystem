@@ -5,7 +5,7 @@ import { Progress } from "@/components/ui/progress";
 import { Button } from "@/components/ui/button";
 import type { TicketDetail } from "@/hooks/use-ticket";
 
-export function AiPanel({ ticket }: { ticket: TicketDetail }) {
+export function AiPanel({ ticket, compact = false }: { ticket: TicketDetail; compact?: boolean }) {
   if (!ticket.aiCategory && !ticket.aiConfidence) return null;
 
   return (
@@ -13,13 +13,13 @@ export function AiPanel({ ticket }: { ticket: TicketDetail }) {
       initial={{ opacity: 0, y: 6 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.25 }}
-      className="space-y-2 rounded-xl border bg-accent/40 p-4"
+      className="space-y-3 rounded-2xl bg-accent/60 p-4"
     >
       <div className="flex items-center gap-2 text-sm font-medium text-accent-foreground">
         <Sparkles className="size-4" />
         AI classification
       </div>
-      <div className="grid grid-cols-2 gap-3 text-sm sm:grid-cols-3">
+      <div className={compact ? "grid grid-cols-2 gap-3 text-sm" : "grid grid-cols-2 gap-3 text-sm sm:grid-cols-3"}>
         <div>
           <p className="text-xs text-muted-foreground">Predicted category</p>
           <p className="font-medium">{ticket.aiCategory ?? "—"}</p>
@@ -29,7 +29,7 @@ export function AiPanel({ ticket }: { ticket: TicketDetail }) {
           <p className="font-medium">{ticket.aiPriority ?? "—"}</p>
         </div>
         {ticket.aiConfidence != null && (
-          <div>
+          <div className={compact ? "col-span-2" : undefined}>
             <p className="text-xs text-muted-foreground">Confidence</p>
             <div className="mt-1.5 flex items-center gap-2">
               <Progress value={ticket.aiConfidence * 100} className="h-1.5" />
@@ -60,7 +60,7 @@ export function DuplicateBanner({
       initial={{ opacity: 0, scale: 0.97 }}
       animate={{ opacity: 1, scale: 1 }}
       transition={{ duration: 0.3, ease: "easeOut" }}
-      className="space-y-3 rounded-xl border border-purple-500/30 bg-purple-500/5 p-4"
+      className="space-y-3 rounded-2xl bg-purple-500/8 p-4 ring-1 ring-purple-500/15"
     >
       <div className="flex items-center gap-2 text-sm font-medium text-purple-600 dark:text-purple-400">
         <GitMerge className="size-4" />
