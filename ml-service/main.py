@@ -1,13 +1,26 @@
-from fastapi import FastAPI
+import hmac
+import os
+from contextlib import asynccontextmanager
+
+from fastapi import FastAPI, Header, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
+import training
 from classifier import classifier
 from embeddings import embed
 from duplicates import find_similar
 from routing import pick_best_agent
 
-app = FastAPI(title="ResolveIQ ML service")
+@asynccontextmanager
+async def lifespan(_app: FastAPI):
+    # Load the embedding model and the classifier before taking traffic, so the first real ticket
+    # isn't the one that pays a ~10s warm-up (which used to blow the web app's request timeout).
+    classifier.info()
+    yield
+
+
+app = FastAPI(title="ResolveIQ ML service", lifespan=lifespan)
 
 app.add_middleware(
     CORSMiddleware,
@@ -75,8 +88,8 @@ def health():
 @app.post("/classify", response_model=ClassifyResponse)
 def classify(req: ClassifyRequest):
     text = f"{req.title}. {req.description}"
-    category, priority, confidence = classifier.predict(text)
     vector = embed(text)
+    category, priority, confidence = classifier.predict(text, vector)  # reuse the embedding: no second pass
     return ClassifyResponse(category=category, priority=priority, confidence=confidence, embedding=vector)
 
 
@@ -100,3 +113,43 @@ def route(req: RouteRequest):
             avgResolutionMins=breakdown["avgResolutionMins"],
         ),
     )
+
+
+@app.get("/model")
+def model_info():
+    """Which model is serving, when it was trained, on what, and how it scored on the benchmark."""
+    return classifier.info()
+
+
+class RetrainRequest(BaseModel):
+    save: bool = True
+
+
+@app.post("/retrain")
+def retrain(req: RetrainRequest | None = None, x_admin_token: str | None = Header(default=None)):
+    """
+    Retrains on the built-in examples plus admin corrections from the database. The new model only
+    replaces the current one if it isn't meaningfully worse on the benchmark.
+    Protected by ML_ADMIN_TOKEN; disabled entirely if that isn't configured.
+    """
+    expected = os.environ.get("ML_ADMIN_TOKEN")
+    if not expected:
+        raise HTTPException(status_code=503, detail="Retraining is disabled: ML_ADMIN_TOKEN is not set.")
+    if not x_admin_token or not hmac.compare_digest(x_admin_token, expected):
+        raise HTTPException(status_code=403, detail="Invalid admin token.")
+
+    try:
+        report = training.run(use_db=True, save=(req.save if req else True), current_artifact=classifier._get())
+    except training.TrainingBusy as busy:
+        raise HTTPException(status_code=409, detail=str(busy))
+
+    report.pop("_candidate", None)
+    if report["saved"]:
+        classifier.reload()
+    return {
+        "promoted": report["promoted"],
+        "saved": report["saved"],
+        "reason": report["reason"],
+        "sources": report["sources"],
+        "benchmark": {k: training._summarise(v) for k, v in report["benchmark"].items()},
+    }

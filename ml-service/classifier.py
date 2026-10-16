@@ -1,43 +1,56 @@
-"""TF-IDF + Logistic Regression classifiers for ticket category and priority."""
+"""
+Serving-time classifier.
 
-from sklearn.feature_extraction.text import TfidfVectorizer
-from sklearn.linear_model import LogisticRegression
-from sklearn.pipeline import Pipeline
+Uses the model saved by training.py (models/classifier.joblib) when there is one; otherwise it
+trains from the built-in examples the first time it is needed, which takes about a second and means
+a fresh clone works with no setup. See training.py for what the model is and how it is evaluated.
+"""
 
-from training_data import EXAMPLES
+import threading
 
+import numpy as np
 
-def _build_pipeline() -> Pipeline:
-    return Pipeline(
-        [
-            ("tfidf", TfidfVectorizer(ngram_range=(1, 2), min_df=1, stop_words="english")),
-            ("clf", LogisticRegression(max_iter=1000, class_weight="balanced")),
-        ]
-    )
+import model_store
+import training
 
 
 class TicketClassifier:
     def __init__(self) -> None:
-        texts = [t for t, _, _ in EXAMPLES]
-        categories = [c for _, c, _ in EXAMPLES]
-        priorities = [p for _, _, p in EXAMPLES]
+        self._artifact: dict | None = None
+        self._source = "built-in"
+        self._lock = threading.Lock()
 
-        self.category_pipeline = _build_pipeline()
-        self.category_pipeline.fit(texts, categories)
+    def _get(self) -> dict:
+        if self._artifact is None:
+            with self._lock:
+                if self._artifact is None:
+                    saved = model_store.load()
+                    if saved is not None:
+                        self._artifact, self._source = saved, "trained"
+                    else:
+                        self._artifact, self._source = training.train_builtin(), "built-in"
+        return self._artifact
 
-        self.priority_pipeline = _build_pipeline()
-        self.priority_pipeline.fit(texts, priorities)
+    def predict(self, text: str, embedding: list[float] | None = None) -> tuple[str, str, float]:
+        """Returns (category, priority, confidence). Pass `embedding` to avoid embedding the text twice."""
+        artifact = self._get()
+        vector = embedding if embedding is not None else training._default_embed([text])[0]
+        return training.predict_vectors(artifact, np.array([vector]))[0]
 
-    def predict(self, text: str) -> tuple[str, str, float]:
-        category = self.category_pipeline.predict([text])[0]
-        category_proba = self.category_pipeline.predict_proba([text])[0].max()
+    def reload(self) -> None:
+        """Drop the in-memory model so the next prediction picks up a newly saved one."""
+        with self._lock:
+            self._artifact = None
 
-        priority = self.priority_pipeline.predict([text])[0]
-
-        # Confidence shown to the admin reflects the category call, since that's
-        # the prediction they can override — priority rides along with it.
-        confidence = float(category_proba)
-        return category, priority, confidence
+    def info(self) -> dict:
+        artifact = self._get()
+        metrics = model_store.load_metrics() if self._source == "trained" else None
+        return {
+            "source": self._source,
+            "trained_at": artifact["trained_at"],
+            "sources": artifact["sources"],
+            "benchmark": metrics["benchmark"] if metrics else None,
+        }
 
 
 classifier = TicketClassifier()

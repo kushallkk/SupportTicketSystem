@@ -3,3 +3,7 @@ __pycache__/
 *.pyc
 .env
 *.joblib
+
+# trained model artifacts (produced by train.py / POST /retrain) and downloaded datasets
+models/
+.cache/

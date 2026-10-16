@@ -9,7 +9,7 @@ AI-powered support ticket system with three role-based dashboards (User, Agent, 
 ## Stack
 
 - **Web** (`/web`): Next.js 16 (App Router) + TypeScript + Tailwind + shadcn/ui (Base UI primitives) + Framer Motion + Recharts. NextAuth v5 (credentials) for role-based auth. Prisma + Postgres (Neon). Socket.io for realtime ticket/comment updates over a custom Node server.
-- **ML service** (`/ml-service`): FastAPI + scikit-learn (TF-IDF + Logistic Regression) for classification, `sentence-transformers` (all-MiniLM-L6-v2) for embeddings, and a plain weighted-scoring function (not ML) for load-balancing.
+- **ML service** (`/ml-service`): FastAPI. Classification is logistic regression over `sentence-transformers` (all-MiniLM-L6-v2) embeddings, the same vectors used for duplicate detection; load-balancing is a plain weighted-scoring function (not ML).
 
 Ticket creation still succeeds even if the ML service is down — classification/routing/duplicate-detection calls fail soft.
 
@@ -57,6 +57,12 @@ npm run seed
 ```
 
 Creates an admin, 5 agents, 15 users, and 130+ tickets across categories/statuses — including real AI classifications and embeddings if the ML service is reachable. Prints the demo login (`admin@resolveiq.dev` / `password123`, all seeded accounts share that password).
+
+## Classifier and retraining
+
+Category and priority are predicted from sentence embeddings. On 100 independent hand-written tickets this scores 91% category accuracy (the original TF-IDF model scored 64%); on a separate sealed set of 50 it scores 82% (original 66%). Both sets are small, so treat them as indicative; the method, the limits and the public-dataset experiment that did *not* help are written up in [`ml-service/eval/README.md`](ml-service/eval/README.md).
+
+The model learns from **admin corrections**: when an admin changes a ticket's category or priority, that is a trusted label. On the admin Analytics page, **Retrain from corrections** trains a new model and puts it live only if it isn't worse on the benchmark. It needs the same random `ML_ADMIN_TOKEN` in `web/.env` and `ml-service/.env`; without it, retraining is disabled. From the command line: `cd ml-service && python train.py --db --save`.
 
 ## Attachments
 

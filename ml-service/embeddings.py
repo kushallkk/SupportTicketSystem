@@ -16,3 +16,10 @@ def embed(text: str) -> list[float]:
     model = get_model()
     vector = model.encode(text, normalize_embeddings=True)
     return vector.tolist()
+
+
+def embed_many(texts: list[str]) -> list[list[float]]:
+    """Batch version used when training; same model and normalization as `embed`."""
+    model = get_model()
+    vectors = model.encode(texts, batch_size=64, normalize_embeddings=True, show_progress_bar=False)
+    return vectors.tolist()

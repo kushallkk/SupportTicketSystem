@@ -6,3 +6,4 @@ sentence-transformers==3.3.1
 numpy==2.2.1
 psycopg[binary]==3.2.3
 python-dotenv==1.0.1
+joblib>=1.4
