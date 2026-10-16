@@ -2,7 +2,7 @@ import hmac
 import os
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI, Header, HTTPException
+from fastapi import Depends, FastAPI, Header, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
@@ -28,6 +28,21 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+
+def require_api_key(x_api_key: str | None = Header(default=None)):
+    """
+    Shared secret between the web app and this service. When deployed the service has a public URL, so
+    without this anyone could call it. Not enforced when ML_API_KEY is unset, which keeps local dev easy.
+    """
+    expected = os.environ.get("ML_API_KEY")
+    if not expected:
+        return
+    if not x_api_key or not hmac.compare_digest(x_api_key, expected):
+        raise HTTPException(status_code=401, detail="Missing or invalid API key.")
+
+
+protected = [Depends(require_api_key)]
 
 
 class ClassifyRequest(BaseModel):
@@ -85,7 +100,7 @@ def health():
     return {"status": "ok"}
 
 
-@app.post("/classify", response_model=ClassifyResponse)
+@app.post("/classify", response_model=ClassifyResponse, dependencies=protected)
 def classify(req: ClassifyRequest):
     text = f"{req.title}. {req.description}"
     vector = embed(text)
@@ -93,13 +108,13 @@ def classify(req: ClassifyRequest):
     return ClassifyResponse(category=category, priority=priority, confidence=confidence, embedding=vector)
 
 
-@app.post("/duplicates", response_model=DuplicatesResponse)
+@app.post("/duplicates", response_model=DuplicatesResponse, dependencies=protected)
 def duplicates(req: DuplicatesRequest):
     matches = find_similar(req.embedding, req.exclude_ticket_id)
     return DuplicatesResponse(matches=matches)
 
 
-@app.post("/route", response_model=RouteResponse)
+@app.post("/route", response_model=RouteResponse, dependencies=protected)
 def route(req: RouteRequest):
     agent_id, score, breakdown = pick_best_agent([a.model_dump() for a in req.agents])
     if agent_id is None or breakdown is None:
@@ -115,7 +130,7 @@ def route(req: RouteRequest):
     )
 
 
-@app.get("/model")
+@app.get("/model", dependencies=protected)
 def model_info():
     """Which model is serving, when it was trained, on what, and how it scored on the benchmark."""
     return classifier.info()
@@ -125,7 +140,7 @@ class RetrainRequest(BaseModel):
     save: bool = True
 
 
-@app.post("/retrain")
+@app.post("/retrain", dependencies=protected)
 def retrain(req: RetrainRequest | None = None, x_admin_token: str | None = Header(default=None)):
     """
     Retrains on the built-in examples plus admin corrections from the database. The new model only

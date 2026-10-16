@@ -18,11 +18,17 @@ export type RouteResult = {
   breakdown: { workload: number; categoryAccuracy: number; avgResolutionMins: number } | null;
 };
 
+/** Shared secret the ML service checks on every call except /health (see ML_API_KEY in ml-service/main.py). */
+function authHeaders(): Record<string, string> {
+  const key = process.env.ML_API_KEY;
+  return key ? { "x-api-key": key } : {};
+}
+
 async function safeFetch<T>(path: string, init: RequestInit): Promise<T | null> {
   try {
     const res = await fetch(`${ML_SERVICE_URL}${path}`, {
       ...init,
-      headers: { "Content-Type": "application/json", ...init.headers },
+      headers: { "Content-Type": "application/json", ...authHeaders(), ...init.headers },
       signal: AbortSignal.timeout(5000),
     });
     if (!res.ok) return null;
@@ -86,7 +92,7 @@ export async function retrainModel(): Promise<RetrainOutcome> {
   try {
     const res = await fetch(`${ML_SERVICE_URL}/retrain`, {
       method: "POST",
-      headers: { "Content-Type": "application/json", "x-admin-token": token },
+      headers: { "Content-Type": "application/json", ...authHeaders(), "x-admin-token": token },
       body: JSON.stringify({ save: true }),
       signal: AbortSignal.timeout(120_000),
     });

@@ -25,6 +25,20 @@ describe("POST /api/auth/signup", () => {
     expect(u.agentProfile).not.toBeNull();
   });
 
+  it("requires the invite code for agents when AGENT_SIGNUP_CODE is set, but never for customers", async () => {
+    process.env.AGENT_SIGNUP_CODE = "let-me-in";
+    try {
+      expect((await register({ ...good, role: "AGENT" })).status).toBe(403);
+      expect((await register({ ...good, role: "AGENT", agentCode: "wrong" })).status).toBe(403);
+      expect(await prisma.user.count()).toBe(0);
+
+      expect((await register({ ...good, role: "AGENT", agentCode: "let-me-in" })).status).toBe(201);
+      expect((await register({ ...good, email: "c@example.com" })).status).toBe(201); // customers unaffected
+    } finally {
+      delete process.env.AGENT_SIGNUP_CODE;
+    }
+  });
+
   it("refuses to create an ADMIN", async () => {
     expect((await register({ ...good, role: "ADMIN" })).status).toBe(400);
     expect(await prisma.user.count()).toBe(0);

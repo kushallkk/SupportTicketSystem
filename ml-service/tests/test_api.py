@@ -70,3 +70,17 @@ def test_duplicates_endpoint_returns_matches(monkeypatch):
     monkeypatch.setattr(main, "find_similar", duplicates.find_similar)
     res = client.post("/duplicates", json={"embedding": [0.1, 0.2]})
     assert res.json() == {"matches": [{"ticketId": "t1", "similarity": 0.97}]}
+
+
+def test_api_key_is_enforced_only_when_configured(monkeypatch):
+    body = {"title": "Invoice is wrong", "description": "The invoice total does not match my plan."}
+
+    monkeypatch.delenv("ML_API_KEY", raising=False)
+    assert client.post("/classify", json=body).status_code == 200  # open in local dev
+
+    monkeypatch.setenv("ML_API_KEY", "s3cret")
+    assert client.post("/classify", json=body).status_code == 401
+    assert client.post("/classify", json=body, headers={"x-api-key": "wrong"}).status_code == 401
+    assert client.post("/classify", json=body, headers={"x-api-key": "s3cret"}).status_code == 200
+    assert client.get("/model").status_code == 401
+    assert client.get("/health").status_code == 200  # liveness probes stay unauthenticated

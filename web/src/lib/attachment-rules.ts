@@ -7,7 +7,8 @@
  * are deliberately not allowed: they can carry scripts.
  */
 
-export const MAX_FILE_BYTES = 5 * 1024 * 1024;
+// 4 MB, not 5: Vercel rejects request bodies over ~4.5 MB, and the client sends one file per request.
+export const MAX_FILE_BYTES = 4 * 1024 * 1024;
 export const MAX_FILES_PER_UPLOAD = 5;
 export const MAX_ATTACHMENTS_PER_TICKET = 20;
 

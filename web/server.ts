@@ -1,7 +1,7 @@
 import { createServer } from "node:http";
 import next from "next";
 import { Server as SocketIOServer } from "socket.io";
-import { setIO } from "./src/lib/socket-server";
+import { setIO } from "./src/lib/io-registry";
 
 const dev = process.env.NODE_ENV !== "production";
 const port = Number(process.env.PORT ?? 3000);

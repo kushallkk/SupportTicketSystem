@@ -5,7 +5,7 @@ import { toast } from "sonner";
 import { Paperclip, UploadCloud, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { ACCEPT_ATTRIBUTE, MAX_FILES_PER_UPLOAD, formatBytes, quickCheck } from "@/lib/attachment-rules";
+import { ACCEPT_ATTRIBUTE, MAX_FILES_PER_UPLOAD, MAX_FILE_BYTES, formatBytes, quickCheck } from "@/lib/attachment-rules";
 
 const sameFile = (a: File, b: File) => a.name === b.name && a.size === b.size && a.lastModified === b.lastModified;
 
@@ -130,7 +130,7 @@ export function FilePicker({
           </button>
         </p>
         <p className="text-xs text-muted-foreground">
-          Images, PDF, TXT, LOG or CSV · up to 5 MB each · max {MAX_FILES_PER_UPLOAD} files
+          Images, PDF, TXT, LOG or CSV · up to {MAX_FILE_BYTES / (1024 * 1024)} MB each · max {MAX_FILES_PER_UPLOAD} files
         </p>
       </div>
       {chips}

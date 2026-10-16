@@ -7,6 +7,9 @@ import { getOrCreateCategory } from "@/lib/get-or-create-category";
 import { emitTicketEvent, emitToAdmins } from "@/lib/socket-server";
 import type { Prisma, TicketPriority } from "@prisma/client";
 
+// Creating a ticket calls the ML service and several queries; allow more than a serverless default.
+export const maxDuration = 30;
+
 export async function GET(req: Request) {
   const auth = await requireUser();
   if ("error" in auth) return auth.error;

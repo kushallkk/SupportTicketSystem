@@ -5,6 +5,7 @@ export const signupSchema = z.object({
   email: z.email("Invalid email address"),
   password: z.string().min(8, "Password must be at least 8 characters"),
   role: z.enum(["USER", "AGENT"]).default("USER"),
+  agentCode: z.string().max(200).optional(),
 });
 
 export const loginSchema = z.object({
