@@ -9,7 +9,8 @@
 
 Why these: Vercel cannot hold WebSockets open (so Pusher replaces Socket.io) and has no persistent disk (so
 Vercel Blob replaces local uploads). The ML service needs an always-on container with ~2 GB RAM for the embedding
-model, and a free Space gives 16 GB and only sleeps after ~48 h idle.
+model. Hugging Face now charges for Docker Spaces and the other free hosts are too small or sleep, so it runs on
+Modal, whose free Starter plan includes $30 of compute credit a month (a warm 2 GiB container is about $20 of it).
 
 Locally nothing changes: with none of the variables below set, the app still uses Socket.io and local disk.
 
@@ -32,23 +33,34 @@ The current database password has been pasted into chat and sits in local files,
 2. Copy both strings: the **pooled** one (host contains `-pooler`) for the app, and the **direct** one for migrations.
 3. Update your local `web/.env` and `ml-service/.env` with the new values.
 
-## 2. Hugging Face Space (ML service)
+## 2. Modal (ML service)
 
-1. huggingface.co -> **New Space** -> SDK **Docker** -> template **Blank** -> hardware **CPU basic (free)**.
-2. Space **Settings -> Variables and secrets -> New secret**, add: `DATABASE_URL` (pooled), `ML_API_KEY`, `ML_ADMIN_TOKEN`.
-3. Create a **write** access token (huggingface.co/settings/tokens).
-4. From the repo root, after committing:
+1. modal.com -> **Sign up** (GitHub login) -> choose the free **Starter** plan.
+2. Install and log in (opens a browser tab to approve):
 
    ```bash
-   ml-service/deploy-to-space.sh https://huggingface.co/spaces/<you>/<space-name>
+   pip install modal
+   modal setup
+   ```
+3. Store the three secrets (values from `web/.env` and `web/.env.deploy`):
+
+   ```bash
+   modal secret create resolveiq-ml DATABASE_URL="..." ML_API_KEY="..." ML_ADMIN_TOKEN="..."
+   ```
+4. Deploy from the `ml-service` folder:
+
+   ```bash
+   cd ml-service
+   modal deploy modal_app.py
    ```
 
-   Username = your HF username, password = the token. The first build takes ~5-10 minutes.
-5. When it says "Running", open `https://<you>-<space-name>.hf.space/health` -> `{"status":"ok"}`.
+   The first build takes ~5 minutes (it downloads torch and bakes in the embedding model) and prints a URL like
+   `https://<workspace>--resolveiq-ml-web.modal.run`.
+5. Open `<that url>/health` -> `{"status":"ok"}`.
 
-Notes: the Space URL is public, but every endpoint except `/health` demands `x-api-key`. A retrained model is saved
-on the Space's disk, which is wiped when the Space restarts, so after a restart it serves the built-in model until an
-admin presses *Retrain* again.
+Notes: one container stays warm (`min_containers=1`) so tickets never wait for a cold start. A retrained model is
+saved on the container's disk, which is wiped when the container restarts, so afterwards it serves the built-in
+model until an admin presses *Retrain* again. Set a workspace budget in Modal so usage can never surprise you.
 
 ## 3. Pusher (live updates)
 
@@ -66,9 +78,9 @@ admin presses *Retrain* again.
    |---|---|
    | `DATABASE_URL` | Neon **pooled** string |
    | `AUTH_SECRET` | from step 0 |
-   | `ML_SERVICE_URL` | `https://<you>-<space-name>.hf.space` |
-   | `ML_API_KEY` | same as in the Space |
-   | `ML_ADMIN_TOKEN` | same as in the Space |
+   | `ML_SERVICE_URL` | the Modal URL from step 2 |
+   | `ML_API_KEY` | same as in the Modal secret |
+   | `ML_ADMIN_TOKEN` | same as in the Modal secret |
    | `STORAGE_DRIVER` | `blob` |
    | `PUSHER_APP_ID` / `PUSHER_KEY` / `PUSHER_SECRET` / `PUSHER_CLUSTER` | from Pusher |
    | `NEXT_PUBLIC_PUSHER_KEY` / `NEXT_PUBLIC_PUSHER_CLUSTER` | same key and cluster |
@@ -103,7 +115,7 @@ the demo customers/agents or give them new passwords.
 
 ## Known limits on the free tiers
 
-- The first ticket after the Space has slept may skip AI (the web app waits 5 s, a cold Space needs 1-2 minutes).
-  The ticket is still created; open the Space URL once before a demo to warm it up.
+- If the ML container is restarting, a ticket created in that moment skips AI (the web app waits 5 s). The
+  ticket is still created normally.
 - Attachments are capped at 4 MB (Vercel's request-body limit) and uploaded one file per request.
 - Vercel Hobby is for non-commercial use, which covers a college project.
