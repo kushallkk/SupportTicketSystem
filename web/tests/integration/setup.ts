@@ -13,6 +13,8 @@ vi.mock("@/lib/ml-client", () => ({
   classifyTicket: vi.fn(),
   findDuplicates: vi.fn(),
   routeTicket: vi.fn(),
+  getModelInfo: vi.fn(),
+  retrainModel: vi.fn(),
 }));
 vi.mock("@/lib/socket-server", () => ({
   emitTicketEvent: vi.fn(),

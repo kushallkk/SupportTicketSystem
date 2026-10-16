@@ -42,6 +42,7 @@ export default defineConfig({
       env: {
         NEXT_DIST_DIR: ".next-e2e",
         UPLOAD_DIR,
+        ML_ADMIN_TOKEN: "e2e-admin-token",
         PORT: String(WEB_PORT),
         DATABASE_URL: databaseUrl,
         ML_SERVICE_URL: `http://localhost:${ML_STUB_PORT}`,

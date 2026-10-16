@@ -1,6 +1,6 @@
 import { expect, test } from "@playwright/test";
 import { ADMIN, AGENT_A, AGENT_B, PASSWORD, db, resetAndSeed } from "./db";
-import { closeSessions, logIn, newSession } from "./helpers";
+import { closeSessions, logIn, newSession, setStubDuplicates } from "./helpers";
 
 test.afterEach(closeSessions);
 
@@ -83,4 +83,30 @@ test("analytics and agents pages render real numbers for an admin", async ({ bro
   await admin.goto("/admin/agents");
   await expect(admin.getByText("Agent Alpha")).toBeVisible();
   await expect(admin.getByText("Agent Beta")).toBeVisible();
+});
+
+test("the AI model card shows what is live and retraining swaps it for a better one", async ({ browser }) => {
+  await setStubDuplicates([]); // also resets the ML stub to its "built-in model" state
+  const admin = await newSession(browser);
+  await logIn(admin, ADMIN.email, PASSWORD);
+  await admin.goto("/admin/analytics");
+
+  const card = admin.getByTestId("model-card");
+  await expect(card.getByText("Built-in model")).toBeVisible();
+  await expect(card.getByText("54 built-in examples")).toBeVisible();
+
+  await admin.getByRole("button", { name: "Retrain from corrections" }).click();
+
+  await expect(admin.getByText(/New model is live/)).toBeVisible();
+  await expect(card.getByText("Retrained model")).toBeVisible();
+  await expect(card.getByText("2 admin corrections")).toBeVisible();
+  await expect(card.getByText("93%")).toBeVisible(); // candidate accuracy
+  await expect(card.getByText(/original model\s+scored 64%/)).toBeVisible();
+});
+
+test("customers and agents never get the retrain endpoint", async ({ browser }) => {
+  const agent = await newSession(browser);
+  await logIn(agent, AGENT_A.email, PASSWORD);
+  expect((await agent.request.post("/api/ml/retrain")).status()).toBe(403);
+  expect((await agent.request.get("/api/ml/model")).status()).toBe(403);
 });

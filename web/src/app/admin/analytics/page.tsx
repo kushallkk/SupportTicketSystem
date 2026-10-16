@@ -16,6 +16,7 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { format } from "date-fns";
+import { ModelCard } from "@/components/admin/model-card";
 
 type Overview = {
   totalTickets: number;
@@ -72,6 +73,8 @@ export default function AnalyticsPage() {
           hint="Assignments the admin did not override"
         />
       </div>
+
+      <ModelCard />
 
       <Card>
         <CardHeader>
