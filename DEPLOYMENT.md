@@ -4,7 +4,7 @@
  Browser ──> Vercel (Next.js web app, root dir `web/`) ──> Neon Postgres
                 │  ├─ Vercel Blob (private)  : ticket attachments
                 │  ├─ Pusher Channels        : live updates
-                │  └─ x-api-key ─────────────> Hugging Face Space (FastAPI ML service)
+                │  └─ x-api-key ─────────────> Modal (FastAPI ML service, always-on)
 ```
 
 Why these: Vercel cannot hold WebSockets open (so Pusher replaces Socket.io) and has no persistent disk (so
