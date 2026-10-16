@@ -58,6 +58,35 @@ npm run seed
 
 Creates an admin, 5 agents, 15 users, and 130+ tickets across categories/statuses — including real AI classifications and embeddings if the ML service is reachable. Prints the demo login (`admin@resolveiq.dev` / `password123`, all seeded accounts share that password).
 
+## Attachments
+
+Customers, agents and admins can attach images, PDF, TXT, LOG and CSV files (5 MB each, 5 per upload, 20 per ticket) to a ticket or to a comment. Files on an agent's internal note are hidden from the customer.
+
+Uploads are validated by their real content, not just the filename (SVG/HTML are refused), stored under a random key, and served through an authorized route with `nosniff` and a sandboxing CSP. Locally they live in `web/.uploads/` (gitignored). The storage backend sits behind a small interface in `web/src/lib/storage`.
+
+## Tests
+
+```bash
+# ML service
+cd ml-service && pip install -r requirements-dev.txt && python -m pytest
+
+# Web: unit tests (no database needed)
+cd web && npm test
+
+# Web: integration + browser (E2E) tests
+```
+
+Integration and E2E tests **wipe every table** in the database they run against, so they use a separate throwaway Postgres (a free second Neon project works). Put its connection string in `web/.env.test` (gitignored) as `DATABASE_URL="..."`, or set `TEST_DATABASE_URL`. Every entry point refuses to run if that database is the same host as the one in `web/.env`.
+
+```bash
+cd web
+npm run test:integration   # API routes against the real test database
+npx playwright install chromium   # once
+npm run test:e2e           # production build + Chromium; uses a stub for the ML service
+```
+
+CI (`.github/workflows/ci.yml`) always runs typecheck, unit tests and the ML tests; it runs the database-backed suites when a `TEST_DATABASE_URL` repository secret exists.
+
 ## Project structure
 
 ```

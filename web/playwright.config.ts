@@ -1,8 +1,10 @@
+import path from "node:path";
 import { defineConfig, devices } from "@playwright/test";
 import { resolveTestDatabaseUrl } from "./tests/integration/guard";
 
 const WEB_PORT = 3100;
 const ML_STUB_PORT = 8001;
+const UPLOAD_DIR = path.resolve(__dirname, ".uploads-e2e");
 
 // Throws (aborting the run) if the test DB is missing or is the main database.
 const databaseUrl = resolveTestDatabaseUrl(__dirname);
@@ -39,6 +41,7 @@ export default defineConfig({
       timeout: 300_000,
       env: {
         NEXT_DIST_DIR: ".next-e2e",
+        UPLOAD_DIR,
         PORT: String(WEB_PORT),
         DATABASE_URL: databaseUrl,
         ML_SERVICE_URL: `http://localhost:${ML_STUB_PORT}`,

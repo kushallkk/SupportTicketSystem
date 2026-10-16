@@ -3,6 +3,17 @@
 import { useCallback, useEffect, useState } from "react";
 import { useRealtime } from "@/lib/use-socket";
 
+export type AttachmentInfo = {
+  id: string;
+  fileName: string;
+  fileSize: number;
+  mimeType: string;
+  commentId: string | null;
+  isInternal: boolean;
+  createdAt: string;
+  uploadedBy: { id: string; name: string };
+};
+
 export type TicketDetail = {
   id: string;
   title: string;
@@ -31,6 +42,7 @@ export type TicketDetail = {
     author: { id: string; name: string; role: string };
   }[];
   ratings: { id: string; score: number; feedback: string | null }[];
+  attachments: AttachmentInfo[];
   assignmentLogs: { wasOverridden: boolean; aiSuggestedScore: number | null }[];
 };
 

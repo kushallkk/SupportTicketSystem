@@ -9,11 +9,14 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Loader2, Sparkles } from "lucide-react";
+import { FilePicker } from "@/components/attachments/file-picker";
+import { uploadAttachments } from "@/lib/upload-client";
 
 export default function NewTicketPage() {
   const router = useRouter();
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
+  const [files, setFiles] = useState<File[]>([]);
   const [loading, setLoading] = useState(false);
 
   async function onSubmit(e: React.FormEvent) {
@@ -34,6 +37,15 @@ export default function NewTicketPage() {
     }
 
     const ticket = await res.json();
+    if (files.length > 0) {
+      const uploaded = await uploadAttachments(ticket.id, files);
+      if (!uploaded.ok) {
+        // The ticket exists either way; don't lose it over a failed attachment.
+        toast.warning(`Ticket created, but the attachments weren't saved: ${uploaded.error}`);
+        router.push(`/dashboard/${ticket.id}`);
+        return;
+      }
+    }
     toast.success("Ticket created — routed automatically");
     router.push(`/dashboard/${ticket.id}`);
   }
@@ -78,6 +90,10 @@ export default function NewTicketPage() {
                 onChange={(e) => setDescription(e.target.value)}
                 placeholder="What happened? Steps to reproduce, error messages, anything that helps."
               />
+            </div>
+            <div className="space-y-2">
+              <Label>Attachments (optional)</Label>
+              <FilePicker files={files} onChange={setFiles} disabled={loading} />
             </div>
             <Button type="submit" disabled={loading} className="w-full">
               {loading && <Loader2 className="size-4 animate-spin" />}

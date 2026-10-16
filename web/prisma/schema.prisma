@@ -48,6 +48,7 @@ model User {
   comments        Comment[]
   ratings         Rating[]
   assignmentOverrides AssignmentLog[] @relation("OverriddenBy")
+  attachmentsUploaded Attachment[] @relation("AttachmentUploader")
 
   @@index([role])
 }
@@ -150,21 +151,29 @@ model Comment {
   body      String
   isInternal Boolean @default(false) // internal agent/admin notes, hidden from the raising user
   createdAt DateTime @default(now())
+  attachments Attachment[]
 
   @@index([ticketId])
 }
 
 model Attachment {
-  id        String   @id @default(cuid())
-  ticketId  String
-  ticket    Ticket   @relation(fields: [ticketId], references: [id], onDelete: Cascade)
-  fileName  String
-  fileUrl   String
-  fileSize  Int
-  mimeType  String
-  createdAt DateTime @default(now())
+  id           String   @id @default(cuid())
+  ticketId     String
+  ticket       Ticket   @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  // Set when the file was attached to a specific comment; null = attached to the ticket itself.
+  commentId    String?
+  comment      Comment? @relation(fields: [commentId], references: [id], onDelete: Cascade)
+  uploadedById String
+  uploadedBy   User     @relation("AttachmentUploader", fields: [uploadedById], references: [id])
+  fileName     String   // sanitized display name only; never used to build a filesystem path
+  storageKey   String   @unique // opaque key inside the storage backend (random, not user-controlled)
+  fileSize     Int
+  mimeType     String   // canonical type decided server-side from the file's real content
+  isInternal   Boolean  @default(false) // copied from the comment: hidden from the requester
+  createdAt    DateTime @default(now())
 
   @@index([ticketId])
+  @@index([commentId])
 }
 
 model Rating {

@@ -9,6 +9,9 @@ import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { initials, timeAgo } from "@/lib/ticket-display";
 import { Loader2, Lock, Send } from "lucide-react";
+import { AttachmentList } from "@/components/attachments/attachment-list";
+import { FilePicker } from "@/components/attachments/file-picker";
+import { uploadAttachments } from "@/lib/upload-client";
 import { cn } from "@/lib/utils";
 import type { TicketDetail } from "@/hooks/use-ticket";
 
@@ -25,25 +28,44 @@ export function CommentThread({
 }) {
   const [body, setBody] = useState("");
   const [isInternal, setIsInternal] = useState(false);
+  const [files, setFiles] = useState<File[]>([]);
   const [loading, setLoading] = useState(false);
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
-    if (!body.trim()) return;
+    if (!body.trim() || loading) return;
+
+    // Clear the composer the moment Post is clicked: anything typed from here on belongs to the
+    // next comment and must never be wiped when this one finishes sending. If sending fails the
+    // draft is put back below.
+    const draft = { body, isInternal, files };
+    setBody("");
+    setIsInternal(false);
+    setFiles([]);
     setLoading(true);
+
     const res = await fetch(`/api/tickets/${ticketId}/comments`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ body, isInternal }),
+      body: JSON.stringify({ body: draft.body, isInternal: draft.isInternal }),
     });
-    setLoading(false);
     if (!res.ok) {
+      setBody((current) => current || draft.body);
+      setIsInternal(draft.isInternal);
+      setFiles((current) => (current.length > 0 ? current : draft.files));
+      setLoading(false);
       toast.error("Couldn't post comment");
       return;
     }
-    setBody("");
-    setIsInternal(false);
     onPosted();
+
+    if (draft.files.length > 0) {
+      const comment = await res.json();
+      const uploaded = await uploadAttachments(ticketId, draft.files, comment.id);
+      if (!uploaded.ok) toast.warning(`Comment posted, but the attachments weren't saved: ${uploaded.error}`);
+      onPosted();
+    }
+    setLoading(false);
   }
 
   return (
@@ -76,6 +98,11 @@ export function CommentThread({
                 )}
               </div>
               <p className="mt-1 text-sm whitespace-pre-wrap">{c.body}</p>
+              <AttachmentList
+                attachments={ticket.attachments.filter((a) => a.commentId === c.id)}
+                onChanged={onPosted}
+                className="mt-2"
+              />
             </div>
           </div>
         ))}
@@ -88,6 +115,7 @@ export function CommentThread({
           placeholder={canPostInternal ? "Add a comment or internal note..." : "Add a comment..."}
           rows={3}
         />
+        <FilePicker variant="compact" files={files} onChange={setFiles} disabled={loading} />
         <div className="flex items-center justify-between">
           {canPostInternal ? (
             <div className="flex items-center gap-2">

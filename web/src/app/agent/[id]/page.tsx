@@ -6,6 +6,7 @@ import { useTicket } from "@/hooks/use-ticket";
 import { TicketHeader } from "@/components/ticket-detail/header";
 import { AiPanel, DuplicateBanner } from "@/components/ticket-detail/ai-panel";
 import { CommentThread } from "@/components/ticket-detail/comment-thread";
+import { TicketAttachments } from "@/components/attachments/attachment-list";
 import { AgentActions } from "@/components/ticket-detail/agent-actions";
 import { Skeleton } from "@/components/ui/skeleton";
 
@@ -33,6 +34,7 @@ export default function AgentTicketDetailPage({ params }: { params: Promise<{ id
     <div className="mx-auto grid max-w-5xl gap-6 lg:grid-cols-3">
       <div className="space-y-6 lg:col-span-2">
         <TicketHeader ticket={ticket} basePath="/agent" />
+        <TicketAttachments attachments={ticket.attachments} onChanged={refetch} />
         <DuplicateBanner ticket={ticket} basePath="/agent" />
         <AiPanel ticket={ticket} />
         <CommentThread ticket={ticket} ticketId={ticket.id} canPostInternal onPosted={refetch} />

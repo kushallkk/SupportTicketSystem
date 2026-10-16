@@ -18,6 +18,13 @@ async function loadTicket(id: string) {
       },
       ratings: true,
       assignmentLogs: { orderBy: { createdAt: "desc" }, take: 1 },
+      attachments: {
+        orderBy: { createdAt: "asc" },
+        select: {
+          id: true, fileName: true, fileSize: true, mimeType: true, commentId: true, isInternal: true,
+          createdAt: true, uploadedBy: { select: { id: true, name: true } },
+        },
+      },
     },
   });
 }
@@ -42,7 +49,10 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
   const visibleComments =
     user.role === "USER" ? ticket.comments.filter((c) => !c.isInternal) : ticket.comments;
 
-  return NextResponse.json({ ...ticket, comments: visibleComments });
+  const visibleAttachments =
+    user.role === "USER" ? ticket.attachments.filter((a) => !a.isInternal) : ticket.attachments;
+
+  return NextResponse.json({ ...ticket, comments: visibleComments, attachments: visibleAttachments });
 }
 
 export async function PATCH(req: Request, { params }: { params: Promise<{ id: string }> }) {

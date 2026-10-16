@@ -1,3 +1,4 @@
+import fs from "node:fs/promises";
 import path from "node:path";
 import { afterAll, beforeEach, vi } from "vitest";
 import { assertNotMainDatabase, readMainDatabaseUrl } from "./guard";
@@ -29,6 +30,8 @@ const TABLES = [
 beforeEach(async () => {
   const { prisma } = await import("@/lib/prisma");
   await prisma.$executeRawUnsafe(`TRUNCATE ${TABLES.map((t) => `"${t}"`).join(", ")} RESTART IDENTITY CASCADE`);
+
+  await fs.rm(process.env.UPLOAD_DIR!, { recursive: true, force: true });
 
   vi.resetAllMocks();
   // Default: ML service is down (every call fails soft to null). Tests opt in to ML behaviour.

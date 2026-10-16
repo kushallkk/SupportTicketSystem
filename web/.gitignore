@@ -46,3 +46,7 @@ next-env.d.ts
 /.next-e2e/
 /test-results/
 /playwright-report/
+
+# uploaded files (local storage driver)
+/.uploads/
+/.uploads-e2e/
