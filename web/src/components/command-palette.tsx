@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
+  Command,
   CommandDialog,
   CommandEmpty,
   CommandGroup,
@@ -60,6 +61,7 @@ export function CommandPalette({ role }: { role: "USER" | "AGENT" | "ADMIN" }) {
 
   return (
     <CommandDialog open={open} onOpenChange={setOpen}>
+      <Command>
       <CommandInput placeholder="Type a command or search..." />
       <CommandList>
         <CommandEmpty>No results found.</CommandEmpty>
@@ -72,6 +74,7 @@ export function CommandPalette({ role }: { role: "USER" | "AGENT" | "ADMIN" }) {
           ))}
         </CommandGroup>
       </CommandList>
+      </Command>
     </CommandDialog>
   );
 }

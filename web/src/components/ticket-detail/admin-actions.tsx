@@ -10,6 +10,20 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Loader2, ShieldAlert } from "lucide-react";
 import type { TicketDetail } from "@/hooks/use-ticket";
 
+const PRIORITY_ITEMS = [
+  { value: "LOW", label: "Low" },
+  { value: "MEDIUM", label: "Medium" },
+  { value: "HIGH", label: "High" },
+  { value: "CRITICAL", label: "Critical" },
+];
+const STATUS_ITEMS = [
+  { value: "OPEN", label: "Open" },
+  { value: "IN_PROGRESS", label: "In progress" },
+  { value: "RESOLVED", label: "Resolved" },
+  { value: "CLOSED", label: "Closed" },
+  { value: "REOPENED", label: "Reopened" },
+];
+
 type Agent = { id: string; name: string; email: string; openCount: number };
 type Category = { id: string; name: string };
 
@@ -71,7 +85,11 @@ export function AdminActions({ ticket, onChanged }: { ticket: TicketDetail; onCh
 
         <div className="space-y-1.5">
           <Label>Assigned agent</Label>
-          <Select value={assignedToId} onValueChange={(v) => setAssignedToId(v ?? "")}>
+          <Select
+            items={agents.map((a) => ({ value: a.id, label: `${a.name} · ${a.openCount} open` }))}
+            value={assignedToId}
+            onValueChange={(v) => setAssignedToId(v ?? "")}
+          >
             <SelectTrigger className="w-full">
               <SelectValue placeholder="Unassigned" />
             </SelectTrigger>
@@ -88,7 +106,11 @@ export function AdminActions({ ticket, onChanged }: { ticket: TicketDetail; onCh
         <div className="grid grid-cols-2 gap-3">
           <div className="space-y-1.5">
             <Label>Category</Label>
-            <Select value={categoryId} onValueChange={(v) => setCategoryId(v ?? "")}>
+            <Select
+              items={categories.map((c) => ({ value: c.id, label: c.name }))}
+              value={categoryId}
+              onValueChange={(v) => setCategoryId(v ?? "")}
+            >
               <SelectTrigger className="w-full">
                 <SelectValue placeholder="Uncategorized" />
               </SelectTrigger>
@@ -103,7 +125,7 @@ export function AdminActions({ ticket, onChanged }: { ticket: TicketDetail; onCh
           </div>
           <div className="space-y-1.5">
             <Label>Priority</Label>
-            <Select value={priority} onValueChange={(v) => setPriority(v as typeof priority)}>
+            <Select items={PRIORITY_ITEMS} value={priority} onValueChange={(v) => setPriority(v as typeof priority)}>
               <SelectTrigger className="w-full">
                 <SelectValue />
               </SelectTrigger>
@@ -119,7 +141,7 @@ export function AdminActions({ ticket, onChanged }: { ticket: TicketDetail; onCh
 
         <div className="space-y-1.5">
           <Label>Status</Label>
-          <Select value={status} onValueChange={(v) => setStatus(v as typeof status)}>
+          <Select items={STATUS_ITEMS} value={status} onValueChange={(v) => setStatus(v as typeof status)}>
             <SelectTrigger className="w-full">
               <SelectValue />
             </SelectTrigger>

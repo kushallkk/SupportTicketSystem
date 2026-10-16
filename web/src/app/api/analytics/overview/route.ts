@@ -13,9 +13,11 @@ export async function GET() {
   const auth = await requireUser(["ADMIN"]);
   if ("error" in auth) return auth.error;
 
+  // Day buckets are UTC calendar days end to end. (Mixing local-midnight starts with UTC date
+  // keys shifted the chart by a day outside UTC and dropped today's tickets.)
   const since = new Date();
-  since.setDate(since.getDate() - 13);
-  since.setHours(0, 0, 0, 0);
+  since.setUTCDate(since.getUTCDate() - 13);
+  since.setUTCHours(0, 0, 0, 0);
 
   const [tickets, categories, agents, assignmentLogs] = await Promise.all([
     prisma.ticket.findMany({
@@ -46,7 +48,7 @@ export async function GET() {
   const dayBuckets: Record<string, number> = {};
   for (let i = 0; i < 14; i++) {
     const d = new Date(since);
-    d.setDate(d.getDate() + i);
+    d.setUTCDate(d.getUTCDate() + i);
     dayBuckets[d.toISOString().slice(0, 10)] = 0;
   }
   for (const t of tickets) {

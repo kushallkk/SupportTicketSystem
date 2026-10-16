@@ -3,7 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { requireUser } from "@/lib/api-utils";
 import { ticketCreateSchema } from "@/lib/validations";
 import { classifyTicket, findDuplicates, routeTicket } from "@/lib/ml-client";
-import { categoryDisplayName } from "@/lib/categories";
+import { getOrCreateCategory } from "@/lib/get-or-create-category";
 import { emitTicketEvent, emitToAdmins } from "@/lib/socket-server";
 import type { Prisma, TicketPriority } from "@prisma/client";
 
@@ -65,14 +65,7 @@ export async function POST(req: Request) {
 
   let categoryId: string | null = null;
   if (classification?.category) {
-    const category = await prisma.category.upsert({
-      where: { slug: classification.category },
-      update: {},
-      create: {
-        name: categoryDisplayName(classification.category),
-        slug: classification.category,
-      },
-    });
+    const category = await getOrCreateCategory(classification.category);
     categoryId = category.id;
   }
 

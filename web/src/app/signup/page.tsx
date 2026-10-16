@@ -96,7 +96,14 @@ export default function SignupPage() {
             </div>
             <div className="space-y-2">
               <Label>I am a...</Label>
-              <Select value={role} onValueChange={(v) => setRole(v as "USER" | "AGENT")}>
+              <Select
+                items={[
+                  { value: "USER", label: "Customer raising tickets" },
+                  { value: "AGENT", label: "Support agent" },
+                ]}
+                value={role}
+                onValueChange={(v) => setRole(v as "USER" | "AGENT")}
+              >
                 <SelectTrigger className="w-full">
                   <SelectValue />
                 </SelectTrigger>
