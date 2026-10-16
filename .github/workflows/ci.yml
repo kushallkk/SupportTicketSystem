@@ -51,3 +51,39 @@ jobs:
           key: hf-all-MiniLM-L6-v2
       - name: Tests
         run: python -m pytest -q
+
+  # Needs a disposable Postgres. Add a repo secret TEST_DATABASE_URL (a throwaway Neon project;
+  # tests TRUNCATE every table in it). Without the secret these steps are skipped, not failed.
+  # Fork PRs never receive secrets, so they skip too.
+  database-tests:
+    runs-on: ubuntu-latest
+    env:
+      TEST_DATABASE_URL: ${{ secrets.TEST_DATABASE_URL }}
+    defaults:
+      run:
+        working-directory: web
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        if: env.TEST_DATABASE_URL != ''
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+      - if: env.TEST_DATABASE_URL != ''
+        run: npm ci && npx prisma generate
+      - name: Integration tests (API routes + real Postgres)
+        if: env.TEST_DATABASE_URL != ''
+        run: npm run test:integration
+      - name: Install Playwright Chromium
+        if: env.TEST_DATABASE_URL != ''
+        run: npx playwright install --with-deps chromium
+      - name: End-to-end tests (browser)
+        if: env.TEST_DATABASE_URL != ''
+        run: npm run test:e2e
+      - name: Upload Playwright report
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: web/playwright-report
