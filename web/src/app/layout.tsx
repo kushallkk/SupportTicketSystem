@@ -18,7 +18,9 @@ export const metadata: Metadata = {
   description: "Support ticket management with AI classification, routing, and duplicate detection.",
 };
 
-export default function RootLayout({ children }: LayoutProps<"/">) {
+// Typed explicitly: Next's generated global LayoutProps only exists after a build, so relying on it
+// breaks `npm run typecheck` on a fresh checkout (and in CI).
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html
       lang="en"
