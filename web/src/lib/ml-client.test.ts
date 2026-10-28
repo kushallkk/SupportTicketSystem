@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { classifyTicket, findDuplicates, getModelInfo, retrainModel, routeTicket } from "./ml-client";
+import { classifyTicket, findDuplicates, getModelInfo, retrainModel, routeTicket, warmUpMl } from "./ml-client";
 
 afterEach(() => {
   vi.restoreAllMocks();
@@ -87,5 +87,19 @@ describe("model info and retraining", () => {
     vi.stubEnv("ML_ADMIN_TOKEN", "s3cret");
     mockFetch(() => Promise.reject(new TypeError("fetch failed")));
     expect(await retrainModel()).toMatchObject({ ok: false, status: 502 });
+  });
+});
+
+describe("warmUpMl", () => {
+  it("is true when /health answers, and never throws when the service is down", async () => {
+    const spy = mockFetch(() => json({ status: "ok" }));
+    expect(await warmUpMl()).toBe(true);
+    expect((spy.mock.calls[0] as [string])[0]).toMatch(/\/health$/);
+
+    mockFetch(() => Promise.reject(new TypeError("fetch failed")));
+    expect(await warmUpMl()).toBe(false);
+
+    mockFetch(() => json({}, 503));
+    expect(await warmUpMl()).toBe(false);
   });
 });

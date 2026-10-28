@@ -24,12 +24,17 @@ function authHeaders(): Record<string, string> {
   return key ? { "x-api-key": key } : {};
 }
 
-async function safeFetch<T>(path: string, init: RequestInit): Promise<T | null> {
+// A scale-to-zero ML host needs ~10-20 s to wake and load the model on the first request after a quiet spell.
+// Classification is the call that can hit that, so it may wait; the rest run against an already-warm service.
+const WAKE_TIMEOUT_MS = 25_000;
+const DEFAULT_TIMEOUT_MS = 8_000;
+
+async function safeFetch<T>(path: string, init: RequestInit, timeoutMs = DEFAULT_TIMEOUT_MS): Promise<T | null> {
   try {
     const res = await fetch(`${ML_SERVICE_URL}${path}`, {
       ...init,
       headers: { "Content-Type": "application/json", ...authHeaders(), ...init.headers },
-      signal: AbortSignal.timeout(5000),
+      signal: AbortSignal.timeout(timeoutMs),
     });
     if (!res.ok) return null;
     return (await res.json()) as T;
@@ -40,10 +45,24 @@ async function safeFetch<T>(path: string, init: RequestInit): Promise<T | null> 
 }
 
 export function classifyTicket(title: string, description: string) {
-  return safeFetch<ClassifyResult>("/classify", {
-    method: "POST",
-    body: JSON.stringify({ title, description }),
-  });
+  return safeFetch<ClassifyResult>(
+    "/classify",
+    { method: "POST", body: JSON.stringify({ title, description }) },
+    WAKE_TIMEOUT_MS
+  );
+}
+
+/**
+ * Wakes a sleeping ML service. The "Raise a ticket" page calls this when it opens, so the model is already
+ * loaded by the time the customer has finished typing. Resolves to whether the service answered.
+ */
+export async function warmUpMl(): Promise<boolean> {
+  try {
+    const res = await fetch(`${ML_SERVICE_URL}/health`, { signal: AbortSignal.timeout(WAKE_TIMEOUT_MS + 3_000) });
+    return res.ok;
+  } catch {
+    return false;
+  }
 }
 
 export function findDuplicates(embedding: number[], excludeTicketId?: string) {

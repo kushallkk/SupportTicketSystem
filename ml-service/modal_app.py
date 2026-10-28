@@ -1,14 +1,16 @@
 """
-Runs the ML service on Modal (modal.com): the same FastAPI app as `main.py`, hosted in an always-on container.
+Runs the ML service on Modal (modal.com): the same FastAPI app as `main.py`, hosted in a scale-to-zero container.
 
     pip install modal
     modal setup                                   # one-time browser login
     modal secret create resolveiq-ml DATABASE_URL=... ML_API_KEY=... ML_ADMIN_TOKEN=...
     modal deploy modal_app.py                     # prints the public https URL
 
-Modal's free Starter plan gives $30 of compute credit per month. One warm container with 2 GiB of RAM costs
-roughly $20 of that, which is why `min_containers=1`: the first ticket after a quiet spell must not wait for a
-cold start. Lower `min_containers` to 0 to scale to zero (cheaper, but the first request then waits ~20-30 s).
+Modal's free Starter plan includes only $1 of compute credit per month (no card). A permanently running 2 GiB
+container uses that up within a day or two, after which Modal DISABLES the workspace. So this scales to zero:
+it only bills while a request is being served plus a short idle window. The web app compensates: opening the
+"Raise a ticket" page pings /api/ml/warm so the model is loaded before the customer submits, and classification
+waits up to 25 s for a cold start.
 """
 from pathlib import Path
 
@@ -38,8 +40,7 @@ app = modal.App("resolveiq-ml", image=image)
     secrets=[modal.Secret.from_name("resolveiq-ml")],  # DATABASE_URL, ML_API_KEY, ML_ADMIN_TOKEN
     cpu=0.5,
     memory=2048,
-    min_containers=1,
-    scaledown_window=600,
+    scaledown_window=60,  # seconds idle before shutting down; every idle second is billed
     timeout=300,  # retraining embeds the benchmark and can take a while
 )
 @modal.concurrent(max_inputs=8)

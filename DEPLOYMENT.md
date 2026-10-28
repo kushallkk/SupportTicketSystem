@@ -4,13 +4,15 @@
  Browser ──> Vercel (Next.js web app, root dir `web/`) ──> Neon Postgres
                 │  ├─ Vercel Blob (private)  : ticket attachments
                 │  ├─ Pusher Channels        : live updates
-                │  └─ x-api-key ─────────────> Modal (FastAPI ML service, always-on)
+                │  └─ x-api-key ─────────────> Modal (FastAPI ML service, scale-to-zero)
 ```
 
 Why these: Vercel cannot hold WebSockets open (so Pusher replaces Socket.io) and has no persistent disk (so
-Vercel Blob replaces local uploads). The ML service needs an always-on container with ~2 GB RAM for the embedding
+Vercel Blob replaces local uploads). The ML service needs a container with ~2 GB RAM for the embedding
 model. Hugging Face now charges for Docker Spaces and the other free hosts are too small or sleep, so it runs on
-Modal, whose free Starter plan includes $30 of compute credit a month (a warm 2 GiB container is about $20 of it).
+Modal. NOTE: despite what third-party pricing pages say, a no-card Starter workspace gets only **$1** of compute
+credit a month, and Modal disables the workspace when it is used up. So the service scales to zero instead of
+staying warm (an always-on container burned the whole $1 in about a day).
 
 Locally nothing changes: with none of the variables below set, the app still uses Socket.io and local disk.
 
@@ -58,9 +60,14 @@ The current database password has been pasted into chat and sits in local files,
    `https://<workspace>--resolveiq-ml-web.modal.run`.
 5. Open `<that url>/health` -> `{"status":"ok"}`.
 
-Notes: one container stays warm (`min_containers=1`) so tickets never wait for a cold start. A retrained model is
-saved on the container's disk, which is wiped when the container restarts, so afterwards it serves the built-in
-model until an admin presses *Retrain* again. Set a workspace budget in Modal so usage can never surprise you.
+Notes:
+- The container scales to zero after 60 s idle, so the first request after a quiet spell waits ~15-20 s for it to
+  start and load the model. The web app hides most of that: opening *Raise a ticket* pings `/api/ml/warm`, and
+  classification waits up to 25 s. Each wake-up costs roughly $0.001 of the $1 monthly credit.
+- A retrained model is saved on the container's disk, which is wiped when it shuts down, so afterwards it serves
+  the built-in model until an admin presses *Retrain* again.
+- Check usage at modal.com -> your workspace -> Usage & billing. If the workspace shows as "disabled", the
+  credit is spent; it resets at the start of the next billing cycle (the 1st of the month).
 
 ## 3. Pusher (live updates)
 
@@ -115,7 +122,6 @@ the demo customers/agents or give them new passwords.
 
 ## Known limits on the free tiers
 
-- If the ML container is restarting, a ticket created in that moment skips AI (the web app waits 5 s). The
-  ticket is still created normally.
+- If the ML service is down or out of credit, tickets are still created, just without AI category or routing.
 - Attachments are capped at 4 MB (Vercel's request-body limit) and uploaded one file per request.
 - Vercel Hobby is for non-commercial use, which covers a college project.

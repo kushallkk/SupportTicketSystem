@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -25,6 +25,11 @@ export default function NewTicketPage() {
   const [description, setDescription] = useState("");
   const [files, setFiles] = useState<File[]>([]);
   const [loading, setLoading] = useState(false);
+
+  // Wake the AI service while the customer types (it may be asleep to save free-tier credit).
+  useEffect(() => {
+    fetch("/api/ml/warm").catch(() => {});
+  }, []);
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
