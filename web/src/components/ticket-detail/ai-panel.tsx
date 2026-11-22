@@ -3,6 +3,7 @@ import Link from "next/link";
 import { motion } from "framer-motion";
 import { Progress } from "@/components/ui/progress";
 import { Button } from "@/components/ui/button";
+import { formatTicketId } from "@/lib/ticket-display";
 import type { TicketDetail } from "@/hooks/use-ticket";
 
 export function AiPanel({ ticket, compact = false }: { ticket: TicketDetail; compact?: boolean }) {
@@ -72,6 +73,9 @@ export function DuplicateBanner({
         )}
       </div>
       <Link href={`${basePath}/${ticket.duplicateOf.id}`} className="block text-sm font-medium hover:underline">
+        <span className="mr-2 font-mono text-xs font-normal text-muted-foreground">
+          {formatTicketId(ticket.duplicateOf.number)}
+        </span>
         {ticket.duplicateOf.title}
       </Link>
       {ticket.duplicateOf.resolutionNote && (

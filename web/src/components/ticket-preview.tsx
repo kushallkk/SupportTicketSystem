@@ -34,13 +34,15 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Textarea } from "@/components/ui/textarea";
 import { AiPanel, DuplicateBanner } from "@/components/ticket-detail/ai-panel";
 import { PriorityBadge, StatusBadge } from "@/components/ticket-badges";
+import { TicketId } from "@/components/ticket-id";
 import { useTicket, type TicketDetail } from "@/hooks/use-ticket";
-import { initials, timeAgo } from "@/lib/ticket-display";
+import { formatTicketId, initials, timeAgo } from "@/lib/ticket-display";
 
 type Role = "USER" | "AGENT" | "ADMIN";
 
 export function PropertyList({ ticket }: { ticket: TicketDetail }) {
   const rows: [string, React.ReactNode][] = [
+    ["Ticket ID", formatTicketId(ticket.number)],
     ["Category", ticket.category?.name ?? "Uncategorized"],
     ["Assigned to", ticket.assignedTo?.name ?? "Unassigned"],
     ["Raised by", ticket.raisedBy.name],
@@ -133,6 +135,7 @@ export function TicketPreview({
     <div className="space-y-5 p-5">
       <div className="flex items-center justify-between gap-2">
         <div className="flex flex-wrap items-center gap-1.5">
+          <TicketId number={ticket.number} copyable />
           <StatusBadge status={ticket.status as never} />
           <PriorityBadge priority={ticket.priority as never} />
         </div>

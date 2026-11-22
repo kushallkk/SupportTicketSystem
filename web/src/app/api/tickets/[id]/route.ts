@@ -11,7 +11,7 @@ async function loadTicket(id: string) {
       category: true,
       raisedBy: { select: { id: true, name: true, email: true } },
       assignedTo: { select: { id: true, name: true, email: true } },
-      duplicateOf: { select: { id: true, title: true, resolutionNote: true, status: true } },
+      duplicateOf: { select: { id: true, number: true, title: true, resolutionNote: true, status: true } },
       comments: {
         orderBy: { createdAt: "asc" },
         include: { author: { select: { id: true, name: true, role: true } } },

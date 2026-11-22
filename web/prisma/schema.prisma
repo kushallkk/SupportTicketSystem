@@ -94,6 +94,8 @@ model Category {
 
 model Ticket {
   id          String         @id @default(cuid())
+  // Human-friendly sequential number shown as TKT-0042; `id` stays the internal key used in URLs and relations.
+  number      Int            @unique @default(autoincrement())
   title       String
   description String
 

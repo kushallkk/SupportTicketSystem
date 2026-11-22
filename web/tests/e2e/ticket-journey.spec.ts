@@ -21,6 +21,7 @@ test("raise -> AI routes it -> agent resolves -> customer rates and it closes", 
 
   // They can see the AI output and who is handling it.
   await expect(customer.getByText("AI classification")).toBeVisible();
+  await expect(customer.getByTestId("ticket-id").first()).toHaveText(/^TKT-\d{4,}$/); // every ticket shows its ID
   await expect(customer.getByText("account", { exact: true })).toBeVisible();
   await expect(customer.getByText(/Assigned to Agent (Alpha|Beta)/)).toBeVisible();
   const ticket = await db.ticket.findUniqueOrThrow({ where: { id: ticketId }, include: { assignedTo: true } });

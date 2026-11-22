@@ -29,6 +29,7 @@ test("admin sees all tickets and can override the AI's assignment; it is logged"
   const admin = await newSession(browser);
   await logIn(admin, ADMIN.email, PASSWORD);
   await expect(admin.getByRole("link", { name: /Invoice is wrong/ })).toBeVisible();
+  await expect(admin.getByRole("link", { name: /Invoice is wrong/ }).getByTestId("ticket-id")).toHaveText(/^TKT-\d{4,}$/);
   await openTicket(admin, /Invoice is wrong/);
   await expect(admin.getByText("Assigned to Agent Alpha")).toBeVisible();
 

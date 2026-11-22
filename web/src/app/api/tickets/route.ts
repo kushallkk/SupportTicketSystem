@@ -5,6 +5,7 @@ import { ticketCreateSchema } from "@/lib/validations";
 import { classifyTicket, findDuplicates, routeTicket } from "@/lib/ml-client";
 import { getOrCreateCategory } from "@/lib/get-or-create-category";
 import { emitTicketEvent, emitToAdmins } from "@/lib/socket-server";
+import { parseTicketRef } from "@/lib/ticket-display";
 import type { Prisma, TicketPriority } from "@prisma/client";
 
 // Creating a ticket calls the ML service and several queries; allow more than a serverless default.
@@ -30,9 +31,12 @@ export async function GET(req: Request) {
   if (priority) where.priority = priority as TicketPriority;
   if (categoryId) where.categoryId = categoryId;
   if (q) {
+    const ref = parseTicketRef(q);
     where.OR = [
       { title: { contains: q, mode: "insensitive" } },
       { description: { contains: q, mode: "insensitive" } },
+      // Quoting an ID ("TKT-0042" or "42") finds that ticket.
+      ...(ref ? [{ number: ref }] : []),
     ];
   }
 

@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { PriorityBadge, StatusBadge } from "@/components/ticket-badges";
+import { TicketId } from "@/components/ticket-id";
 import { TicketPreview } from "@/components/ticket-preview";
 import { useMediaQuery } from "@/hooks/use-media-query";
 import type { TicketListItem } from "@/hooks/use-tickets";
@@ -103,7 +104,7 @@ export function TicketWorkspace({
                 <Input
                   value={query ?? ""}
                   onChange={(e) => onQueryChange(e.target.value)}
-                  placeholder="Search tickets..."
+                  placeholder="Search tickets or IDs..."
                   className="h-9 rounded-lg border-transparent bg-muted/60 pl-8 shadow-none focus-visible:bg-background"
                 />
               </div>
@@ -237,6 +238,7 @@ function Feed({
 
               <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-2">
+                  <TicketId number={t.number} />
                   <p className="truncate text-sm font-medium">{t.title}</p>
                   {t.duplicateOfId && (
                     <span title="Flagged as a possible duplicate">

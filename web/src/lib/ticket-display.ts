@@ -70,3 +70,19 @@ export function timeAgo(date: Date | string) {
   }
   return "just now";
 }
+
+/** The ticket number as people say it: 42 -> "TKT-0042". Numbers past 9999 simply grow (TKT-10000). */
+export function formatTicketId(number: number) {
+  return `TKT-${String(number).padStart(4, "0")}`;
+}
+
+/**
+ * If a search box entry is a ticket reference ("TKT-0042", "tkt42", "#42", or just "42"), the number it
+ * refers to; otherwise null. Lets people find a ticket by quoting its ID.
+ */
+export function parseTicketRef(query: string): number | null {
+  const match = /^\s*(?:tkt[\s-]*)?#?(\d{1,9})\s*$/i.exec(query);
+  if (!match) return null;
+  const n = Number(match[1]);
+  return n >= 1 ? n : null;
+}

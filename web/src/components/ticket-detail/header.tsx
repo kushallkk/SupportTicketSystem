@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 import { StatusBadge, PriorityBadge } from "@/components/ticket-badges";
+import { TicketId } from "@/components/ticket-id";
 import { timeAgo } from "@/lib/ticket-display";
 import type { TicketDetail } from "@/hooks/use-ticket";
 
@@ -14,6 +15,7 @@ export function TicketHeader({ ticket, basePath }: { ticket: TicketDetail; baseP
 
       <div className="space-y-2">
         <div className="flex flex-wrap items-center gap-2">
+          <TicketId number={ticket.number} copyable />
           <StatusBadge status={ticket.status as never} />
           <PriorityBadge priority={ticket.priority as never} />
           {ticket.category && (

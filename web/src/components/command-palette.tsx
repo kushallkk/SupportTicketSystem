@@ -15,6 +15,8 @@ import {
 import { LayoutDashboard, Plus, Users, BarChart3, Sun, Moon, Ticket } from "lucide-react";
 import { useTheme } from "next-themes";
 import { PriorityBadge, StatusBadge } from "@/components/ticket-badges";
+import { TicketId } from "@/components/ticket-id";
+import { formatTicketId } from "@/lib/ticket-display";
 import type { TicketListItem } from "@/hooks/use-tickets";
 
 type NavAction = { label: string; icon: React.ReactNode; href?: string; onSelect?: () => void };
@@ -114,13 +116,14 @@ export function CommandPalette({ role }: { role: "USER" | "AGENT" | "ADMIN" }) {
                 {shownTickets.map((t) => (
                   <CommandItem
                     key={t.id}
-                    value={`${term} ticket-${t.id} ${t.title}`}
+                    value={`${term} ticket-${t.id} ${t.title} ${formatTicketId(t.number)}`}
                     onSelect={() => {
                       close();
                       router.push(`${home}/${t.id}`);
                     }}
                   >
                     <Ticket className="size-4" />
+                    <TicketId number={t.number} />
                     <span className="min-w-0 flex-1 truncate">{t.title}</span>
                     <StatusBadge status={t.status as never} />
                     <PriorityBadge priority={t.priority as never} />

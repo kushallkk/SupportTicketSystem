@@ -16,6 +16,7 @@ export type AttachmentInfo = {
 
 export type TicketDetail = {
   id: string;
+  number: number;
   title: string;
   description: string;
   status: string;
@@ -33,7 +34,7 @@ export type TicketDetail = {
   category: { id: string; name: string } | null;
   raisedBy: { id: string; name: string; email: string };
   assignedTo: { id: string; name: string; email: string } | null;
-  duplicateOf: { id: string; title: string; resolutionNote: string | null; status: string } | null;
+  duplicateOf: { id: string; number: number; title: string; resolutionNote: string | null; status: string } | null;
   comments: {
     id: string;
     body: string;

@@ -6,6 +6,7 @@ import { toast } from "sonner";
 
 export type TicketListItem = {
   id: string;
+  number: number;
   title: string;
   description: string;
   status: string;
